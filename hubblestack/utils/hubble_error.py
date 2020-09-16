@@ -1,5 +1,5 @@
 """
-Error types for Nova-v2
+Error types for Audit
 """
 
 class HubbleCheckVersionIncompatibleError(Exception):

@@ -159,11 +159,13 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
         failure_reason = audit_data.get('failure_reason', '')
 
         return_no_exec = audit_impl.get('return_no_exec', False)
-        type = audit_impl.get('type', 'and').lower().strip()
+        check_eval_logic = audit_impl.get('check_eval_logic', 'and')
+        if check_eval_logic:
+            check_eval_logic = check_eval_logic.lower().strip()
 
-        # check for type in check implementation. If not present default is 'and'
-        audit_result['run_config']['type'] = type
-        
+        # check for check_eval_logic in check implementation. If not present default is 'and'
+        audit_result['run_config']['check_eval_logic'] = check_eval_logic
+
         # check if return_no_exec is true
         if return_no_exec:
             audit_result['run_config']['return_no_exec'] = True
@@ -174,6 +176,8 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
         # Check presence of implementation checks
         if 'items' not in audit_impl:
             raise HubbleCheckValidationError('No checks are present in audit_id: {0}'.format(audit_id))
+        if check_eval_logic not in ['and', 'or']:
+            raise HubbleCheckValidationError("Incorrect value provided for parameter 'check_eval_logic': %s" % (check_eval_logic))
 
         # Execute module validation of params
         for audit_check in audit_impl['items']:
@@ -181,15 +185,15 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
 
         # validate succeeded, lets execute it and prepare result dictionary
         audit_result['run_config']['items'] = []
-        
-        # calculate the check result based on type parameter.
-            # If type is 'and', all subchecks should pass for success.
-            # If type is 'or', any passed subcheck will result in success.
-        overall_result = type == 'and'
+
+        # calculate the check result based on check_eval_logic parameter.
+        # If check_eval_logic is 'and', all subchecks should pass for success.
+        # If check_eval_logic is 'or', any passed subcheck will result in success.
+        overall_result = check_eval_logic == 'and'
         failure_reasons = []
         for audit_check in audit_impl['items']:
             mod_status, module_result_local = self._execute_module(audit_impl['module'], audit_id, audit_check, result_list)
-            
+
             # Invoke Comparator
             comparator_status, comparator_result = hubblestack.extmods.module_runner.comparator.run(
                 audit_id, audit_check['comparator'], module_result_local, mod_status)
@@ -215,7 +219,7 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
             # add this result
             audit_result['run_config']['items'].append(audit_result_local)
 
-            if type == 'and':
+            if check_eval_logic == 'and':
                 overall_result = overall_result and comparator_status
             else:
                 overall_result = overall_result or comparator_status

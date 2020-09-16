@@ -28,7 +28,7 @@ check_id:
 
       module: stat
 
-      type: and
+      check_eval_logic: and
 
       checks:
         - path: /etc/ssh/sshd_config.1
@@ -54,7 +54,7 @@ labels:
     The labels associated with a check. We can filter out checks based on labels. Optional
 
 sub_check:
-    Flag to execute a check but not reporting it's output in final outcome. Default - false
+    Flag to execute a check but not report its output in final outcome. Default - false
 
 failure_reason:
     Custom reason to be published in final output if check result is failure. Optional
@@ -63,7 +63,7 @@ invert_result:
     Flag to invert the result of check from success to failure or vice versa. Default - false
 
 grains:
-    Salt grainns to specify on which particular OS/Kernel this check is intended to run. Default - *
+    Salt grains to specify on which particular OS/Kernel this check is intended to run. Default - *
 
 hubble_version:
     String to specify version of hubble on which this check is intended to run. Default - *
@@ -74,18 +74,18 @@ return_no_exec:
 module:
     Name of audit module that is called for check. Mandatory
 
-type:
-    In case there are multiple checks to be run on audit module, the final result is based on the 'type'. Default - and
+check_eval_logic:
+    In case there are multiple checks to be run on audit module, the final result is based on the 'check_eval_logic'. Default - and
 
 checks:
     List of params to be passed to each audit sub module. The list of params can be found in the indvidual module documentation. Mandatory
 
-The output of this module is dict containing result of execution of checks. It can be either of following categories:
+The output of this module is dict containing result of execution of checks. It can be one of following results:
 1. Error - An error in execution of a check
 2. Skipped - A check is skipped due to check params
-3. Success - A check is executed successfully
-4. Failure - A check is executed and resulted in failure
-There are different features also as verbose logging, compliance and debug which can be passed as flag which calling run.
+3. Success - A check is executed and results in a success
+4. Failure - A check is executed and results in failure
+There are additional features as verbose logging, compliance and debug which can be passed as flags.
 """
 
 import fnmatch
@@ -104,7 +104,7 @@ from hubblestack.status import HubbleStatus
 log = logging.getLogger(__name__)
 
 hubble_status = HubbleStatus(__name__, 'top', 'run')
-BASE_DIR_AUDIT_PROFILES = 'hubblestack_audit_profiles_v2'
+BASE_DIR_AUDIT_PROFILES = 'hubblestack_audit_profiles'
 
 CHECK_STATUS = {
     'Success': 'Success',
@@ -112,6 +112,7 @@ CHECK_STATUS = {
     'Skipped': 'Skipped',
     'Error': 'Error'
 }
+
 
 @hubble_status.watch
 def run(audit_files=None,
@@ -137,52 +138,55 @@ def run(audit_files=None,
         Returns dictionary with Success, Skipped, and Failure keys and the
         results of the checks
     """
-    if audit_files is None:
-        return top(verbose=verbose,
-                   show_compliance=show_compliance,
-                   labels=labels)
+    try:
+        if audit_files is None:
+            return top(verbose=verbose,
+                       show_compliance=show_compliance,
+                       labels=labels)
 
-    audit_runner = runner_factory.get_audit_runner()
+        audit_runner = runner_factory.get_audit_runner()
 
-    # categories of results
-    result_dict = {
-        'Success': [],
-        'Failure': [],
-        'Error': [],
-        'Skipped': [],
-    }
-    combined_dict = {}
+        # categories of results
+        result_dict = {
+            'Success': [],
+            'Failure': [],
+            'Error': [],
+            'Skipped': [],
+        }
+        combined_dict = {}
 
-    if verbose is None:
-        verbose = __salt__['config.get']('hubblestack:nova:verbose', False)
-    if show_compliance is None:
-        show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
+        if verbose is None:
+            verbose = __salt__['config.get']('hubblestack:nova:verbose', False)
+        if show_compliance is None:
+            show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
 
-    if type(show_compliance) is str and show_compliance.lower().strip() in ['true', 'false']:
-        show_compliance = show_compliance.lower().strip() == 'true'
-    if type(verbose) is str and verbose.lower().strip() in ['true', 'false']:
-        verbose = verbose.lower().strip() == 'true'
-    if labels:
-        if not isinstance(labels, list):
-            labels = labels.split(',')
-    # validate and get list of filepaths
-    audit_files = _get_audit_files(audit_files)
-    if not audit_files:
+        if type(show_compliance) is str and show_compliance.lower().strip() in ['true', 'false']:
+            show_compliance = show_compliance.lower().strip() == 'true'
+        if type(verbose) is str and verbose.lower().strip() in ['true', 'false']:
+            verbose = verbose.lower().strip() == 'true'
+        if labels:
+            if not isinstance(labels, list):
+                labels = labels.split(',')
+        # validate and get list of filepaths
+        audit_files = _get_audit_files(audit_files)
+        if not audit_files:
+            return result_dict
+
+        # initialize loader
+        audit_runner.init_loader()
+
+        for audit_file in audit_files:
+            ret = audit_runner.execute(audit_file, {
+                'tags': tags,
+                'labels': labels,
+                'verbose': verbose
+            })
+            combined_dict[audit_file] = ret
+
+        _evaluate_results(result_dict, combined_dict, show_compliance, verbose)
         return result_dict
-
-    #initialize loader
-    audit_runner.init_loader()
-
-    for audit_file in audit_files:
-        ret = audit_runner.execute(audit_file, {
-            'tags': tags,
-            'labels': labels,
-            'verbose': verbose
-        })
-        combined_dict[audit_file] = ret
-
-    _evaluate_results(result_dict, combined_dict, show_compliance, verbose)
-    return result_dict
+    except Exception as e:
+        log.exception("Error while running audit run method: %s" % e)
 
 def _get_audit_files(audit_files):
     """Get audit files list, if valid
@@ -204,12 +208,13 @@ def _get_audit_files(audit_files):
     return ['salt://' + BASE_DIR_AUDIT_PROFILES + os.sep + audit_file.replace('.', os.sep) + '.yaml'
             for audit_file in audit_files]
 
+
 def _evaluate_results(result_dict, combined_dict, show_compliance, verbose):
     """
     Evaluate the result dictionary to be returned by the audit module
     :param result_dict: Final dictionary to be returned
     :param combined_dict: Initial dictionary with results for all profiles
-    :param show_compliance: Para to show compliance percentage
+    :param show_compliance: Param to show compliance percentage
     :param verbose: Create output in verbose manner or not
     :return:
     """
@@ -253,6 +258,7 @@ def _calculate_compliance(result_dict):
         compliance = '{0}%'.format(compliance)
         return compliance
     return None
+
 
 @hubble_status.watch
 def top(topfile='top.audit',
@@ -304,6 +310,7 @@ def top(topfile='top.audit',
     _clean_up_results(results)
     return results
 
+
 def _build_data_by_tag(topfile, results):
     """
     Helper function that goes over data in top_data and
@@ -335,6 +342,7 @@ def _build_data_by_tag(topfile, results):
                 continue
 
     return data_by_tag
+
 
 def _get_top_data(topfile):
     """

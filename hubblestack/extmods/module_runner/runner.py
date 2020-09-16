@@ -187,38 +187,46 @@ class Runner(ABC):
         """
         log.debug("Current hubble version: %s" % __grains__['hubble_version'])
         current_version = version.parse(__grains__['hubble_version'])
-        version_str = yaml_dictionary_data.get('hubble_version', '')
+        version_str = yaml_dictionary_data.get('hubble_version', '').strip()
         if not version_str:
             log.debug("No hubble version provided for check id: %s Thus returning true for this check" % (profile_id))
             return True
+        if '*' in version_str:
+            log.error("Invalid syntax in version condition. No regex is supported. check_id: %s hubble_version: %s" % (profile_id, version_str))
+            return False
         version_str = version_str.upper()
         version_list = [[x.strip() for x in item.split("AND")] for item in version_str.split("OR")]
         # '>=2.0.0 AND >3.0.0 AND <=4.0.0 OR ==5.0.0' becomes [['>=2.0.0','>3.0.0','<=4.0.0'], ['==5.0.0']]
         for expression in version_list:  # Outer loop to evaluate OR conditions
             condition_match = True
             for condition in expression:  # Inner loop to evaluate AND conditions
-                if condition.startswith('<='):
-                    condition = condition[2:]
-                    result = current_version <= version.parse(condition)
-                elif condition.startswith('>='):
-                    condition = condition[2:]
-                    result = current_version >= version.parse(condition)
-                elif condition.startswith('<'):
-                    condition = condition[1:]
-                    result = current_version < version.parse(condition)
-                elif condition.startswith('>'):
-                    condition = condition[1:]
-                    result = current_version > version.parse(condition)
-                elif condition.startswith('=='):
-                    condition = condition[2:]
-                    result = current_version == version.parse(condition)
-                elif condition.startswith('!='):
-                    condition = condition[2:]
-                    result = current_version != version.parse(condition)
+                result = False
+                if ' ' not in condition:
+                    if condition.startswith('<='):
+                        condition = condition[2:]
+                        result = current_version <= version.parse(condition)
+                    elif condition.startswith('>='):
+                        condition = condition[2:]
+                        result = current_version >= version.parse(condition)
+                    elif condition.startswith('<'):
+                        condition = condition[1:]
+                        result = current_version < version.parse(condition)
+                    elif condition.startswith('>'):
+                        condition = condition[1:]
+                        result = current_version > version.parse(condition)
+                    elif condition.startswith('=='):
+                        condition = condition[2:]
+                        result = current_version == version.parse(condition)
+                    elif condition.startswith('!='):
+                        condition = condition[2:]
+                        result = current_version != version.parse(condition)
+                    else:
+                        # Throw error as unexpected string occurs
+                        log.error(
+                            "Invalid syntax in version condition, check_id: %s condition: %s" % (profile_id, condition))
                 else:
-                    # Throw error as unexpected string occurs
                     log.error(
-                        "Invalid syntax in version condition, check_id: %s condition: %s" % (profile_id, condition))
+                        "Invalid syntax in hubble version. No operator provided for check_id: %s condition: %s" % (profile_id, condition))
                 condition_match = condition_match and result
                 if not condition_match:
                     # Found a false condition. No need to evaluate further for AND conditions
