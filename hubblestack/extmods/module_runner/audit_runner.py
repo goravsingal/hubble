@@ -6,6 +6,8 @@ import fnmatch
 import hubblestack.extmods.module_runner.runner
 from hubblestack.extmods.module_runner.runner import Caller
 
+import hubblestack.extmods.module_runner.comparator
+
 from hubblestack.utils.hubble_error import HubbleCheckVersionIncompatibleError
 from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
@@ -78,7 +80,7 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
                 })
                 log.error(herror)
             except Exception as exc:
-                log.error(exc)
+                log.exception(exc)
 
         # Evaluate boolean expressions
         boolean_expr_result_list = self._evaluate_boolean_expression(
@@ -156,23 +158,16 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
 
         failure_reason = audit_data.get('failure_reason', '')
 
-        # TODO this will move in comparator
-        invert_result = audit_data.get('invert_result', False)
-
         return_no_exec = audit_impl.get('return_no_exec', False)
         type = audit_impl.get('type', 'and').lower().strip()
 
         # check for type in check implementation. If not present default is 'and'
         audit_result['run_config']['type'] = type
-        audit_result['invert_result'] = invert_result
-
+        
         # check if return_no_exec is true
         if return_no_exec:
             audit_result['run_config']['return_no_exec'] = True
             check_result = CHECK_STATUS['Success']
-            if invert_result:
-                check_result = CHECK_STATUS['Failure']
-                audit_result['failure_reason'] = failure_reason
             audit_result['check_result'] = check_result
             return audit_result
 
@@ -194,14 +189,17 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
         failure_reasons = []
         for audit_check in audit_impl['items']:
             mod_status, module_result_local = self._execute_module(audit_impl['module'], audit_id, audit_check, result_list)
-            # TODO Invoke Comparator
+            
+            # Invoke Comparator
+            comparator_status, comparator_result = hubblestack.extmods.module_runner.comparator.run(
+                audit_id, audit_check['comparator'], module_result_local, mod_status)
 
             audit_result_local = {}
-            if module_result_local['result']:
+            if comparator_status:
                 audit_result_local['check_result'] = CHECK_STATUS['Success']
             else:
                 audit_result_local['check_result'] = CHECK_STATUS['Failure']
-                audit_result_local['failure_reason'] = module_result_local['failure_reason']
+                audit_result_local['failure_reason'] = comparator_result if comparator_result else module_result_local['error']
                 failure_reasons.append(audit_result_local['failure_reason'])
             module_logs = {}
             if not verbose:
@@ -218,12 +216,9 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
             audit_result['run_config']['items'].append(audit_result_local)
 
             if type == 'and':
-                overall_result = overall_result and module_result_local['result']
+                overall_result = overall_result and comparator_status
             else:
-                overall_result = overall_result or module_result_local['result']
-
-        # Update overall check result based on invert result
-        overall_result = overall_result != invert_result
+                overall_result = overall_result or comparator_status
 
         if overall_result:
             audit_result['check_result'] = CHECK_STATUS['Success']
@@ -236,9 +231,6 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
                 if failure_reasons:
                     failure_reasons = set(failure_reasons)
                     audit_result['failure_reason'] = ', '.join(failure_reasons)
-                else:
-                    if invert_result:
-                        audit_result['failure_reason'] = 'Check failed due to invert result is set to true'
 
         return audit_result
 
@@ -262,6 +254,6 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
                     })
                     log.error(herror)
                 except Exception as exc:
-                    log.error(exc)
+                    log.exception(exc)
 
         return boolean_expr_result_list

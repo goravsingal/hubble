@@ -8,13 +8,16 @@ import logging
 import yaml
 from abc import ABC, abstractmethod
 from packaging import version
+import hubblestack.extmods.module_runner.comparator
 
 import salt.loader
 import salt.utils
 from salt.exceptions import CommandExecutionError
+from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
 log = logging.getLogger(__name__)
 __hmods__ = {}
+__comparator__ = {}
 
 class Caller:
     """
@@ -76,6 +79,16 @@ class Runner(ABC):
                                     pack={'__salt__': __salt__,
                                         '__grains__': __grains__})
 
+        ## Initializing comparator only for Audit
+        if self._caller == Caller.AUDIT:
+            global __comparator__
+            __comparator__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'comparators'),
+                                        __opts__,
+                                        tag='comparators',
+                                        pack={'__salt__': __salt__,
+                                            '__grains__': __grains__})
+            hubblestack.extmods.module_runner.comparator.__comparator__ = __comparator__
+
 
     ######################################################
     ################# Non-Public methods #################
@@ -87,6 +100,11 @@ class Runner(ABC):
         """
         validate_param_method = '{0}.validate_params'.format(module_name)
         __hmods__[validate_param_method](profile_id, module_args)
+
+        # Comparators must exist in Audit
+        if self._caller == Caller.AUDIT:
+            if 'comparator' not in module_args:
+                raise HubbleCheckValidationError('No mention of comparator in audit-id: {0}'.format(profile_id))
 
     def _execute_module(self, module_name, profile_id, module_args, extra_args=None):
         """

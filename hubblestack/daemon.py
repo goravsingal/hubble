@@ -689,6 +689,9 @@ def _setup_dirs():
     hubble_mods_dirs = __opts__.get('hubble_mods_dirs', [])
     hubble_mods_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'hubble_mods'))
     __opts__['hubble_mods_dirs'] = hubble_mods_dirs
+    comparators_dirs = __opts__.get('comparators_dirs', [])
+    comparators_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'comparators'))
+    __opts__['comparators_dirs'] = comparators_dirs
     module_dirs = __opts__.get('module_dirs', [])
     module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'modules'))
     __opts__['module_dirs'] = module_dirs
