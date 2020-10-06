@@ -15,6 +15,10 @@ check_unique_id:
       items:
         - args:
             name: vm.zone_reclaim_mode
+          comparator:
+            type: "dict"
+            match:
+              "vm.zone_reclaim_mode": "8"
 
 FDG Example:
 ------------
@@ -33,25 +37,7 @@ Comparator compatible with this module - dict
 
 Sample Output:
 {
-'vm.mmap_rnd_compat_bits': '8',
-'vm.nr_hugepages': '0',
-'vm.nr_hugepages_mempolicy': '0',
-'vm.nr_overcommit_hugepages': '0',
-'vm.nr_pdflush_threads': '0',
-'vm.numa_zonelist_order': 'default',
-'vm.oom_dump_tasks': '1',
-'vm.oom_kill_allocating_task': '0',
-'vm.overcommit_kbytes': '0',
-'vm.overcommit_memory': '0',
-'vm.overcommit_ratio': '50',
-'vm.page-cluster': '3',
-'vm.panic_on_oom': '0',
-'vm.percpu_pagelist_fraction': '0',
-'vm.stat_interval': '1',
-'vm.swappiness': '30',
-'vm.user_reserve_kbytes': '117018',
-'vm.vfs_cache_pressure': '100',
-'vm.zone_reclaim_mode': '0'
+'vm.zone_reclaim_mode': '8'
 }
 """
 

@@ -15,6 +15,10 @@ check_unique_id:
       items:
         - args:
             name: perl*
+          comparator:
+            type: "dict"
+            match_any:
+              'perl-srpm-macros': '1-8.el7'
 
 FDG Example:
 ------------
