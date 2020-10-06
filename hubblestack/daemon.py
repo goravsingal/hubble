@@ -821,6 +821,7 @@ def refresh_grains(initial=False):
     hubblestack.extmods.module_runner.fdg_runner.__salt__ = __salt__
     hubblestack.extmods.module_runner.fdg_runner.__grains__ = __grains__
     hubblestack.extmods.module_runner.fdg_runner.__opts__ = __opts__
+    hubblestack.extmods.module_runner.fdg_runner.__returners__ = __returners__
 
     if not initial and __salt__['config.get']('splunklogging', False):
         hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
