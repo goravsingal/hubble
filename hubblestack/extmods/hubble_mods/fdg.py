@@ -23,12 +23,18 @@ fdg_check:   # unique ID
             true_for_success: True  # Whether a "truthy" value constitues success
             use_status: False  # Use the status result of the fdg run.
             consolidation_operator: and/or
+          comparator:
+            type: boolean
+            match: true
     - filter:
         grains: '*' # osfinger grain
       module: fdg
       items:
         - args:
             fdg_file: 'salt://fdg/my_fdg_file.fdg'  # filename for fdg routine
+          comparator:
+            type: boolean
+            match: true
 
 The ``true_for_success`` argument decides how success/failure are decided
 based on the fdg return. By default, any "truthy" value in the ``results`` piece
