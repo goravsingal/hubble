@@ -66,7 +66,7 @@ def validate_params(block_id, block_dict, chain_args=None):
         Example: {'result': "/some/path/file.txt", 'status': True}
 
     Raises:
-        AuditCheckValidationError: For any validation error
+        HubbleCheckValidationError: For any validation error
     """
     log.debug('Module: grep Start validating params for check-id: {0}'.format(block_id))
 

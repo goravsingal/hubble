@@ -84,7 +84,7 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
                 })
                 log.error(herror)
             except Exception as exc:
-                log.exception(exc)
+                log.error(exc)
 
         # Evaluate boolean expressions
         boolean_expr_result_list = self._evaluate_boolean_expression(
@@ -187,7 +187,7 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
             raise HubbleCheckValidationError('No checks are present in audit_id: {0}'.format(audit_id))
         if check_eval_logic not in ['and', 'or']:
             raise HubbleCheckValidationError(
-                "Incorrect value provided for parameter 'check_eval_logic': %s" % (check_eval_logic))
+                "Incorrect value provided for parameter 'check_eval_logic': %s" % check_eval_logic)
 
         # Execute module validation of params
         for audit_check in audit_impl['items']:
@@ -204,7 +204,6 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
         for audit_check in audit_impl['items']:
             mod_status, module_result_local = self._execute_module(audit_impl['module'], audit_id, audit_check,
                                                                    result_list)
-
             # Invoke Comparator
             comparator_status, comparator_result = hubblestack.extmods.module_runner.comparator.run(
                 audit_id, audit_check['comparator'], module_result_local, mod_status)
@@ -275,6 +274,6 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
                     })
                     log.error(herror)
                 except Exception as exc:
-                    log.exception(exc)
+                    log.error(exc)
 
         return boolean_expr_result_list

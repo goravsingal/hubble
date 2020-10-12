@@ -7,6 +7,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 def get_chained_param(chain_args):
     """
     Get the chained param, if present
@@ -14,6 +15,7 @@ def get_chained_param(chain_args):
     if chain_args and 'result' in chain_args:
         return chain_args['result']
     return None
+
 
 def get_param_for_module(block_id, block_dict, param_name):
     """
@@ -35,6 +37,7 @@ def get_param_for_module(block_id, block_dict, param_name):
         return block_dict['args'][param_name]
 
     return None
+
 
 def prepare_negative_result_for_module(block_id, error_string):
     """
