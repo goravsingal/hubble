@@ -23,7 +23,7 @@ class TestVersionMatch(TestCase):
 
     def test_match3(self):
         """
-        Match simple version. Positive test
+        Match simple version. Negative test
         """
         result_to_compare = '3.28.0-1.el7'
         args = {
