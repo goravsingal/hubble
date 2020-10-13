@@ -95,7 +95,7 @@ class Runner(ABC):
     ################# Non-Public methods #################
     ######################################################
 
-    def _validate_module_params(self, module_name, profile_id, module_args, extra_args=None):
+    def _validate_module_params(self, module_name, profile_id, module_args, chaining_args=None):
         """
         A helper method to invoke module's validate_params method
         """
@@ -104,7 +104,8 @@ class Runner(ABC):
                                         .format(profile_id))
 
         validate_param_method = '{0}.validate_params'.format(module_name)
-        __hmods__[validate_param_method](profile_id, module_args, extra_args)
+        __hmods__[validate_param_method](profile_id, module_args, {'chaining_args': chaining_args,
+                                                                   'caller': self._caller})
 
         # Comparators must exist in Audit
         if self._caller == Caller.AUDIT:
@@ -113,7 +114,7 @@ class Runner(ABC):
         elif self._caller == Caller.FDG:
             if 'module' not in module_args:
                 raise CommandExecutionError('Could not execute block \'{0}\': no \'module\' found.'
-                                            .format(block_id))
+                                            .format(profile_id))
             acceptable_block_args = {
                 'return', 'module', 'args', 'comparator',
                 'xpipe_on_true', 'xpipe_on_false', 'xpipe', 'pipe',
@@ -129,21 +130,23 @@ class Runner(ABC):
                                             '\'{1}\' is not a valid block key'
                                             .format(profile_id, key))
 
-    def _execute_module(self, module_name, profile_id, module_args, extra_args=None):
+    def _execute_module(self, module_name, profile_id, module_args, extra_args=None, chaining_args=None):
         """
         Helper method to execute a Module's execute() method.
         """
         execute_method = '{0}.execute'.format(module_name)
-        if extra_args:
-            return __hmods__[execute_method](profile_id, module_args, extra_args)
-        return __hmods__[execute_method](profile_id, module_args)
+        return __hmods__[execute_method](profile_id, module_args, {'chaining_args': chaining_args,
+                                                                   'extra_args': extra_args,
+                                                                   'caller': self._caller})
 
-    def _get_filtered_params_to_log(self, module_name, profile_id, module_args):
+    def _get_filtered_params_to_log(self, module_name, profile_id, module_args, extra_args=None, chaining_args=None):
         """
         Helper method to execute a Module's get_filtered_params_to_log() method.
         """
         filtered_log_method = '{0}.get_filtered_params_to_log'.format(module_name)
-        return __hmods__[filtered_log_method](profile_id, module_args)
+        return __hmods__[filtered_log_method](profile_id, module_args, {'chaining_args': chaining_args,
+                                                                   'extra_args': extra_args,
+                                                                   'caller': self._caller})
 
     def _make_file_available(self, file):
         """

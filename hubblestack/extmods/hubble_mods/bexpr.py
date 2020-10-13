@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-Module to evaluate boolean expressions. Same can be used in both Audit/FDG
+Module to evaluate boolean expressions. It can be used only in Audit
 
 Audit Example:
 ---------------
@@ -61,14 +61,6 @@ check_unique_id:
             type: boolean
             match: True
 
-FDG Example:
-------------
-main:
-  description: 'bexpr check'
-  module: bexpr
-  args:
-    expr: check_unique_id_1 AND check_unique_id_2
-
 Mandatory parameters:
     expr - A boolean expression referring other checks in a profile
 Multiple expressions can be provided in a single implementation under attribute: "items"
@@ -90,13 +82,14 @@ Sample Output:
 import logging
 
 import hubblestack.extmods.module_runner.runner_utils as runner_utils
+from hubblestack.extmods.module_runner.runner import Caller
 from hubblestack.utils.hubble_error import HubbleCheckValidationError
 from pyparsing import infixNotation, opAssoc, Keyword, Word, alphas, ParserElement
 
 log = logging.getLogger(__name__)
 
 
-def validate_params(block_id, block_dict, chain_args=None):
+def validate_params(block_id, block_dict, extra_args=None):
     """
     Validate all mandatory params required for this module
 
@@ -104,16 +97,19 @@ def validate_params(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': "True", 'status': True}
-
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "True", 'status': True},
+                  'caller': 'Audit'}
     Raises:
         HubbleCheckValidationError: For any validation error
     """
     log.debug('Module: bexpr Start validating params for check-id: {0}'.format(block_id))
 
     error = {}
+    # check for calling module. Ony Audit is allowed.
+    if extra_args.get('caller') == Caller.FDG:
+        error['bexpr'] = 'Module: bexpr called from FDG !!!!'
 
     # fetch required param
     expr = runner_utils.get_param_for_module(block_id, block_dict, 'expr')
@@ -126,7 +122,7 @@ def validate_params(block_id, block_dict, chain_args=None):
     log.debug('Validation success for check-id: {0}'.format(block_id))
 
 
-def execute(block_id, block_dict, result_list, chain_args=None):
+def execute(block_id, block_dict, extra_args=None):
     """
     For getting params to log, in non-verbose logging
 
@@ -134,14 +130,18 @@ def execute(block_id, block_dict, result_list, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': "True", 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "True", 'status': True},
+                  'extra_args': [{'check_id': 'ADOBE-01',
+                                  'check_status': 'Success'}]
+                  'caller': 'Audit'}
 
     returns:
         tuple of result(value) and status(boolean)
     """
     log.debug('Executing bexpr module for check-id: %s' % block_id)
+    result_list = extra_args.get('extra_args')
     keyword_list = ['AND', 'OR', 'NOT', '(', ')']
     operand_list = ['AND', 'OR', 'NOT']
     expression = runner_utils.get_param_for_module(block_id, block_dict, 'expr')
@@ -210,7 +210,7 @@ def execute(block_id, block_dict, result_list, chain_args=None):
     return runner_utils.prepare_positive_result_for_module(block_id, True)
 
 
-def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
+def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """
     For getting params to log, in non-verbose logging
 
@@ -218,9 +218,12 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': "True", 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "True", 'status': True},
+                  'extra_args': [{'check_id': 'ADOBE-01',
+                                  'check_status': 'Success'}]
+                  'caller': 'Audit'}
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 

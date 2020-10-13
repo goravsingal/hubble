@@ -21,7 +21,10 @@ class TestBexpr(TestCase):
                 'expr': 'check1 AND check2',
             }
         }
-        bexpr.validate_params(block_id, block_dict)
+        extra_args = {
+            'caller': 'Audit'
+        }
+        bexpr.validate_params(block_id, block_dict, extra_args)
 
     def testValidateParams2(self):
         """
@@ -33,9 +36,11 @@ class TestBexpr(TestCase):
                 'expr1': 'check1 AND check2'
             }
         }
-
+        extra_args = {
+            'caller': 'Audit'
+        }
         with pytest.raises(HubbleCheckValidationError) as exception:
-            bexpr.validate_params(block_id, block_dict)
+            bexpr.validate_params(block_id, block_dict, extra_args)
             pytest.fail('Should not have passed')
         self.assertTrue('Mandatory parameter: expr not found' in str(exception.value))
 
@@ -65,8 +70,11 @@ class TestBexpr(TestCase):
             }
         }
         result_list = []
+        extra_args = {
+            'extra_args': result_list
+        }
         with pytest.raises(HubbleCheckValidationError) as exception:
-            bexpr.execute(block_id, block_dict, result_list)
+            bexpr.execute(block_id, block_dict, extra_args)
             pytest.fail('Should not have passed')
         self.assertTrue('No checks are referred in the boolean expression' in str(exception.value))
 
@@ -82,8 +90,11 @@ class TestBexpr(TestCase):
             }
         }
         result_list = []
+        extra_args = {
+            'extra_args': result_list
+        }
         with pytest.raises(HubbleCheckValidationError) as exception:
-            bexpr.execute(block_id, block_dict, result_list)
+            bexpr.execute(block_id, block_dict, extra_args)
             pytest.fail('Should not have passed')
         self.assertTrue(
             'No operand is present for multiple referred checks in boolean expression' in str(exception.value))
@@ -100,8 +111,11 @@ class TestBexpr(TestCase):
             }
         }
         result_list = []
+        extra_args = {
+            'extra_args': result_list
+        }
         with pytest.raises(HubbleCheckValidationError) as exception:
-            bexpr.execute(block_id, block_dict, result_list)
+            bexpr.execute(block_id, block_dict, extra_args)
             pytest.fail('Should not have passed')
         self.assertTrue('Please verify correct check is referred' in str(exception.value))
 
@@ -124,8 +138,11 @@ class TestBexpr(TestCase):
                 'check_id': 'check2',
                 'check_result': 'Error'
             }]
+        extra_args = {
+            'extra_args': result_list
+        }
         with pytest.raises(HubbleCheckValidationError) as exception:
-            bexpr.execute(block_id, block_dict, result_list)
+            bexpr.execute(block_id, block_dict, extra_args)
             pytest.fail('Should not have passed')
         self.assertTrue(
             'Referred check: check2 result is Error. Setting boolean expression check result to error' in str(
@@ -150,8 +167,11 @@ class TestBexpr(TestCase):
                 'check_id': 'check2',
                 'check_result': 'Skipped'
             }]
+        extra_args = {
+            'extra_args': result_list
+        }
         with pytest.raises(HubbleCheckValidationError) as exception:
-            bexpr.execute(block_id, block_dict, result_list)
+            bexpr.execute(block_id, block_dict, extra_args)
             pytest.fail('Should not have passed')
         self.assertTrue(
             'Referred check: check2 result is Skipped. Setting boolean expression check result to error' in str(
@@ -176,8 +196,11 @@ class TestBexpr(TestCase):
                 'check_id': 'check2',
                 'check_result': 'Failure'
             }]
+        extra_args = {
+            'extra_args': result_list
+        }
         expected_dict = {"result": True}
-        status, result_dict = bexpr.execute(block_id, block_dict, result_list)
+        status, result_dict = bexpr.execute(block_id, block_dict, extra_args)
         self.assertTrue(status)
         self.assertDictEqual(expected_dict, result_dict)
 
@@ -200,8 +223,11 @@ class TestBexpr(TestCase):
                 'check_id': 'check2',
                 'check_result': 'Failure'
             }]
+        extra_args = {
+            'extra_args': result_list
+        }
         expected_dict = {"result": False}
-        status, result_dict = bexpr.execute(block_id, block_dict, result_list)
+        status, result_dict = bexpr.execute(block_id, block_dict, extra_args)
         self.assertTrue(status)
         self.assertDictEqual(expected_dict, result_dict)
 
@@ -225,9 +251,12 @@ class TestBexpr(TestCase):
                 'check_id': 'check2',
                 'check_result': 'Failure'
             }]
+        extra_args = {
+            'extra_args': result_list
+        }
         mockBexpr.side_effect = Exception("Dummy exception")
         with pytest.raises(HubbleCheckValidationError) as exception:
-            bexpr.execute(block_id, block_dict, result_list)
+            bexpr.execute(block_id, block_dict, extra_args)
             pytest.fail('Should not have passed')
         self.assertTrue(
             'Error in evaluating boolean expression:' in str(

@@ -2,7 +2,6 @@ import os
 import logging
 import fnmatch
 
-# from hubblestack.extmods.module_runner.runner import Runner
 import hubblestack.extmods.module_runner.runner
 from hubblestack.extmods.module_runner.runner import Caller
 
@@ -203,7 +202,7 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
         failure_reasons = []
         for audit_check in audit_impl['items']:
             mod_status, module_result_local = self._execute_module(audit_impl['module'], audit_id, audit_check,
-                                                                   result_list)
+                                                                   extra_args=result_list)
             # Invoke Comparator
             comparator_status, comparator_result = hubblestack.extmods.module_runner.comparator.run(
                 audit_id, audit_check['comparator'], module_result_local, mod_status)

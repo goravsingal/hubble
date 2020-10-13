@@ -17,7 +17,7 @@ def get_chained_param(chain_args):
     return None
 
 
-def get_param_for_module(block_id, block_dict, param_name):
+def get_param_for_module(block_id, block_dict, param_name, default_value=None):
     """
     To get the parameter for a module.
 
@@ -27,16 +27,18 @@ def get_param_for_module(block_id, block_dict, param_name):
         The dictionary for yaml block
     :param param_name:
         The name of param name to fetch from chaining or from dictionary
+    :param default_value:
+        The default value to be returned for the param
     """
 
     log.debug('Getting value for param name: {0}, for id: {1}'.format(param_name, block_id))
     if 'args' not in block_dict:
-        return None
+        return default_value
 
     if param_name in block_dict['args']:
         return block_dict['args'][param_name]
 
-    return None
+    return default_value
 
 
 def prepare_negative_result_for_module(block_id, error_string):
