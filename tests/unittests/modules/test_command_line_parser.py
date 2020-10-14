@@ -74,6 +74,21 @@ class TestCommandLineParser(TestCase):
         self.assertTrue(status)
         self.assertEqual(result_dict['result'], ['abc'])
 
+    def testExecute2(self):
+        """
+        Passing cmdline from args
+        should pass
+        """
+        block_id = "test-1"
+        block_dict = {'args':{
+            'cmdline': 'app --config-file=abc test',
+            'key_aliases': ['config-file'],
+            'delimiter': '='
+        }}
+        status, result_dict = command_line_parser.execute(block_id, block_dict)
+        self.assertTrue(status)
+        self.assertEqual(result_dict['result'], ['abc'])
+
     def test_match_key_alias_in_middle_of_cmdline(self):
         """
         Key alias is in the middle of commandLine
