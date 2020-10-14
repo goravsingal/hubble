@@ -130,7 +130,7 @@ def validate_params(block_id, block_dict, extra_args=None):
 
     error = {}
     command_line = None
-    chain_args = extra_args.get('chaining_args')
+    chain_args = None if not extra_args else extra_args.get('chaining_args')
     chained_param = runner_utils.get_chained_param(chain_args)
     if chained_param:
         command_line = chained_param.get('cmdline')
@@ -175,7 +175,7 @@ def execute(block_id, block_dict, extra_args=None):
     try:
         command_line = None
         
-        chain_args = extra_args.get('chaining_args')
+        chain_args = None if not extra_args else extra_args.get('chaining_args')
         chained_param = runner_utils.get_chained_param(chain_args)
         if chained_param:
             command_line = chained_param.get('cmdline')
@@ -298,7 +298,7 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
-    chain_args = extra_args.get('chaining_args')
+    chain_args = None if not extra_args else extra_args.get('chaining_args')
     chained_param = runner_utils.get_chained_param(chain_args)
     command_line = None
     if chained_param:

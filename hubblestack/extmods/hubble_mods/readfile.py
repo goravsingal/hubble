@@ -141,7 +141,7 @@ def execute(block_id, block_dict, extra_args=None):
     """
     log.debug('Executing readfile module for id: {0}'.format(block_id))
 
-    chain_args = extra_args.get('chaining_args')
+    chain_args = None if not extra_args else extra_args.get('chaining_args')
     file_format = runner_utils.get_param_for_module(block_id, block_dict, 'format')
     if file_format == 'json':
         return _handle_file(file_format, block_id, block_dict, chain_args)
