@@ -105,7 +105,7 @@ def validate_params(block_id, block_dict, extra_args=None):
                   'caller': 'Audit'}
 
     Raises:
-        AuditCheckValidationError: For any validation error
+        HubbleCheckValidationError: For any validation error
     """
     log.debug('Module: readfile Start validating params for check-id: {0}'.format(block_id))
 
@@ -143,9 +143,7 @@ def execute(block_id, block_dict, extra_args=None):
 
     chain_args = None if not extra_args else extra_args.get('chaining_args')
     file_format = runner_utils.get_param_for_module(block_id, block_dict, 'format')
-    if file_format == 'json':
-        return _handle_file(file_format, block_id, block_dict, chain_args)
-    elif file_format == 'yaml':
+    if file_format in ['json', 'yaml']:
         return _handle_file(file_format, block_id, block_dict, chain_args)
     elif file_format == 'config':
         return _handle_config_file(block_id, block_dict, chain_args)
