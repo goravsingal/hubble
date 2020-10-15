@@ -23,6 +23,17 @@ List comparator exposes various commands:
             - name: xyz
               running: true
 
+- "match_all" command 
+    example (True when all dictionary mentioned in list match)
+
+    comparator:
+        type: "list"
+        match_all:
+            - name: abc
+              running: false
+            - name: xyz
+              running: true
+
 - "match_any_if_key_matches" command
   This is a special case when user want to match only when desired key is found.
   Example: If name=rsync found, then match other attributes.
@@ -43,7 +54,23 @@ List comparator exposes various commands:
                 - name: xyz
                   running: true
 
+- "filter_compare" command 
+    example (Filter a list, compare it with any other command of list comparator)
+
+    comparator:
+        type: "list"
+        filter_compare:
+            filter:
+                name: abc
+                offset:
+                    type: number
+                    match: <= 15
+            compare:
+                size: >= 4
+
+
 Complete Example
+------------------
 
 check_id:
   description: 'sample description'
@@ -229,3 +256,34 @@ def match_any_if_key_matches(audit_id, result_to_compare, args):
     if failed_once:
         return False, "list::match_any_if_key_matches failure. Got={0}".format(result_to_compare)
     return True, "Check Passed"
+
+def filter_compare(audit_id, result_to_compare, args):
+    """
+    A two-step comparator.
+    First, filter the list
+    Second, compare results
+    
+    :param result_to_compare:
+        The value to compare.
+    :param args:
+        Comparator dictionary as mentioned in the check.
+    """
+    log.debug('Running list::filter_compare for check: {0}'.format(audit_id))
+
+    filter_dict_args = args['filter_compare']['filter']
+    filtered_list = []
+    for r_compare in result_to_compare:
+        ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(
+            audit_id, 
+            {"type": "dict", "match": filter_dict_args},
+            r_compare)
+        if ret_status:
+            filtered_list.append(r_compare)
+
+    # Lets hand-over this new specific comparison to comparator orchestrator
+    filter_comparator_args = {"type": "list"}
+    filter_comparator_args.update(args['filter_compare']['compare'])
+    return hubblestack.extmods.module_runner.comparator.run(
+        audit_id,
+        filter_comparator_args,
+        filtered_list)
