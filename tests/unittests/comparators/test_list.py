@@ -422,3 +422,66 @@ class TestListMatchAll(TestCase):
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match_all("test-1", result_to_compare, args)
             self.assertFalse(status)
+
+class TestListFilterCompare(TestCase):
+    """
+    Unit tests for list::filter_compare comparator
+    """
+    def test_filter_compare1(self):
+        """
+        Positive test
+        """
+        result_to_compare = [
+            {"name": "abc", "status": True, "offset": 0.02},
+            {"name": "abc", "status": True, "offset": 2},
+            {"name": "abc", "status": True, "offset": 0.5},
+        ]
+        args = {
+            "type": "list",
+            "filter_compare": {
+                "filter": {
+                    "status": True,
+                    "offset": {
+                        "type": "number",
+                        "match": "<= 5"
+                    }
+                },
+                "compare": {
+                    "size": ">= 2"
+                }
+            }
+        }
+        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+            comparator_mock.run.return_value = (True, "Pass")
+            status, result = list_comparator.filter_compare("test-1", result_to_compare, args)
+            self.assertTrue(status)
+
+    def test_filter_compare2(self):
+        """
+        A negative test
+        Result set filered having size=1. Expected >= 2
+        """
+        result_to_compare = [
+            {"name": "abc", "status": True, "offset": 0.02},
+            {"name": "abc", "status": False, "offset": 2},
+            {"name": "abc", "status": False, "offset": 0.5},
+        ]
+        args = {
+            "type": "list",
+            "filter_compare": {
+                "filter": {
+                    "status": True,
+                    "offset": {
+                        "type": "number",
+                        "match": "<= 5"
+                    }
+                },
+                "compare": {
+                    "size": ">= 2"
+                }
+            }
+        }
+        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+            comparator_mock.run.return_value = (False, "Pass")
+            status, result = list_comparator.filter_compare("test-1", result_to_compare, args)
+            self.assertFalse(status)
