@@ -101,7 +101,7 @@ def validate_params(block_id, block_dict, extra_args=None):
                   'caller': 'Audit'}
 
     Raises:
-        AuditCheckValidationError: For any validation error
+        HubbleCheckValidationError: For any validation error
     """
     log.debug('Module: time_sync Start validating params for check-id: {0}'.format(block_id))
 
@@ -179,11 +179,7 @@ def _get_ntp_servers(block_id, block_dict, chain_args):
     ntp_servers = runner_utils.get_param_for_module(block_id, block_dict, 'ntp_servers')
     ntp_servers_chained = runner_utils.get_chained_param(chain_args)
 
-    extend_chained = runner_utils.get_param_for_module(block_id, block_dict, 'extend_chained')
-    if extend_chained != False:
-        # default to True
-        extend_chained = True
-
+    extend_chained = runner_utils.get_param_for_module(block_id, block_dict, 'extend_chained', True)
     if extend_chained:
         if ntp_servers:
             if ntp_servers_chained:
