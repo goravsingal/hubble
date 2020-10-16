@@ -9,7 +9,7 @@ Mandatory param:
 Optional param:
     cast_to_string - Default (False) - Specifies if the command output (ex. list of dictionaries)  needs to be type cast to string
 
-    osquery_args - string of args to pass to osquery. Note that the ``--read_max`` and ``--json`` args are already included.
+    flags - string of osquery args to pass to osquery. Note that the ``--read_max`` and ``--json`` args are already included.
 
     osquery_path - specific path to the osquery binary
 
@@ -27,10 +27,13 @@ check_unique_id:
       module: osquery
       items:
         - args:
-            query: 'select count(*) as count from (select pn.pid_namespace from process_namespaces pn JOIN processes pr on pn.pid=pr.pid where pr.name LIKE "%dockerd%" INTERSECT select distinct(pn.pid_namespace) from process_namespaces pn JOIN (select dcp.pid from docker_container_processes dcp JOIN docker_containers dc ON dcp.id = dc.id) x on pn.pid=x.pid);'
+            query: 'SELECT t.unix_time AS query_time, os.* FROM os_version AS os LEFT JOIN time AS t;'
           comparator:
             type: list
-            size: 1
+            match_any:
+              - name: CentOS Linux
+                platform: rhel
+
 
 FDG Example:
 ------------
@@ -38,7 +41,7 @@ main:
   description: 'osquery check'
   module: osquery
     args:
-      query: 'select count(*) as count from (select pn.pid_namespace from process_namespaces pn JOIN processes pr on pn.pid=pr.pid where pr.name LIKE "%dockerd%" INTERSECT select distinct(pn.pid_namespace) from process_namespaces pn JOIN (select dcp.pid from docker_container_processes dcp JOIN docker_containers dc ON dcp.id = dc.id) x on pn.pid=x.pid);'
+      query: 'SELECT t.unix_time AS query_time, os.* FROM os_version AS os LEFT JOIN time AS t;'
 
 Mandatory Params:
     This module requires query. That come either from args, or from chaining, or both
@@ -69,7 +72,7 @@ def validate_params(block_id, block_dict, extra_args=None):
         parameter for this module
     :param extra_args:
         Extra argument dictionary, (If any)
-        Example: {'chaining_args': {'result': , 'status': True},
+        Example: {'chaining_args': {'result': [{'name': 'CentOS Linux', 'platform': 'rhel', 'version': 'CentOS Linux release 7.8.2003 (Core)'}], 'status': True},
                   'caller': 'FDG'}
 
     Raises:
@@ -95,8 +98,8 @@ def execute(block_id, block_dict, extra_args=None):
         parameter for this module
     :param extra_args:
         Extra argument dictionary, (If any)
-        Example: {'chaining_args': {'result': , 'status': True},
-                  'caller': 'Audit'}
+        Example: {'chaining_args': {'result': [{'name': 'CentOS Linux', 'platform': 'rhel', 'version': 'CentOS Linux release 7.8.2003 (Core)'}], 'status': True},
+                  'caller': 'FDG'}
 
     returns:
         tuple of result(value) and status(boolean)
@@ -110,16 +113,16 @@ def execute(block_id, block_dict, extra_args=None):
 
     # fetch optional param
     format_chained = runner_utils.get_param_for_module(block_id, block_dict, 'format_chained', True)
-    osquery_args = runner_utils.get_param_for_module(block_id, block_dict, 'osquery_args')
+    flags = runner_utils.get_param_for_module(block_id, block_dict, 'flags')
     osquery_path = runner_utils.get_param_for_module(block_id, block_dict, 'osquery_path')
     cast_to_string = runner_utils.get_param_for_module(block_id, block_dict, 'cast_to_string', False)
 
     if format_chained and chained_param:
         query = query.format(chained_param)
-    if osquery_args is None:
-        osquery_args = []
+    if flags is None:
+        flags = []
 
-    return _osquery(block_id, query, args=osquery_args, osquery_path=osquery_path, cast_to_string=cast_to_string)
+    return _osquery(block_id, query, args=flags, osquery_path=osquery_path, cast_to_string=cast_to_string)
 
 
 def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
@@ -132,7 +135,7 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
         parameter for this module
     :param extra_args:
         Extra argument dictionary, (If any)
-        Example: {'chaining_args': {'result': , 'status': True},
+        Example: {'chaining_args': {'result': [{'name': 'CentOS Linux', 'platform': 'rhel', 'version': 'CentOS Linux release 7.8.2003 (Core)'}], 'status': True},
                   'caller': 'FDG'}
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
@@ -157,22 +160,22 @@ def _osquery(block_id, query, osquery_path=None, args=None, cast_to_string=None)
     max_file_size = 104857600
 
     if not query:
-        return runner_utils.prepare_negative_result_for_module(block_id, '')
+        return runner_utils.prepare_negative_result_for_module(block_id, 'Empty query passed')
     if 'attach' in query.lower() or 'curl' in query.lower():
         log.critical('Skipping potentially malicious osquery query \'%s\' '
                      'which contains either \'attach\' or \'curl\'', query)
-        return runner_utils.prepare_negative_result_for_module(block_id, '')
+        return runner_utils.prepare_negative_result_for_module(block_id, 'Curl/Attach passed in query')
 
     # Prep the command
     if not osquery_path:
         if not os.path.isfile(__grains__['osquerybinpath']):
             log.error('osquery binary not found: %s', __grains__['osquerybinpath'])
-            return runner_utils.prepare_negative_result_for_module(block_id, '')
+            return runner_utils.prepare_negative_result_for_module(block_id, 'osquery binary not found')
         cmd = [__grains__['osquerybinpath'], '--read_max', max_file_size, '--json', query]
     else:
         if not os.path.isfile(osquery_path):
             log.error('osquery binary not found: %s', osquery_path)
-            return runner_utils.prepare_negative_result_for_module(block_id, '')
+            return runner_utils.prepare_negative_result_for_module(block_id, 'osquery binary not found')
         cmd = [osquery_path, '--read_max', max_file_size, '--json', query]
     if isinstance(args, (list, tuple)):
         cmd.extend(args)
