@@ -99,7 +99,10 @@ def execute(block_id, block_dict, chain_args=None):
     """
     log.debug('Executing win_reg module for id: {0}'.format(block_id))
 
-    reg_name = block_dict.get("args").get("name")
+    if runner_utils.get_chained_param(chain_args):
+        reg_name = runner_utils.get_chained_param(chain_args)
+    else:
+        reg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     reg_dict = _reg_path_splitter(reg_name)
     secret = _find_option_value_in_reg(reg_dict.get('hive'), reg_dict.get('key'), reg_dict.get('value'))
     if isinstance(secret, dict):
@@ -127,7 +130,7 @@ def validate_params(block_id, block_dict, chain_args=None):
             Example: {'result': "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize", 'status': True}
 
         Raises:
-            AuditCheckValidationError: For any validation error
+            HubbleCheckValidationError: For any validation error
         """
     log.debug('Module: win_reg. Start validating params for check-id: {0}'.format(block_id))
 
