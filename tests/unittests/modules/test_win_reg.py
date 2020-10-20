@@ -34,41 +34,6 @@ class TestWinReg(TestCase):
         self.assertEquals(result.get("hive"), "HKEY_LOCAL_MACHINE")
         self.assertEquals(result.get("key"), "Software\\Policies\\Microsoft\\Windows\\EventLog\\Application")
 
-    def test_is_domain_controller_true(self):
-        """
-        Check is_domain_controller for positive output
-        """
-        __salt__ = {}
-        mocked_object = {"vdata" : "LanmanNT"}
-
-        def read_value(hive="HKLM",
-                       key=r"SYSTEM\CurrentControlSet\Control\ProductOptions",
-                       vname="ProductType"):
-            return mocked_object
-        __salt__['reg.read_value'] = read_value
-
-        win_reg.__salt__ = __salt__
-
-        result = win_reg._is_domain_controller()
-        self.assertTrue(result)
-
-    def test_is_domain_controller_false(self):
-        """
-        Check is_domain_controller for negative output
-        """
-        __salt__ = {}
-        mocked_object = {"vdata" : "garbagevalue"}
-
-        def read_value(hive="HKLM",
-                       key=r"SYSTEM\CurrentControlSet\Control\ProductOptions",
-                       vname="ProductType"):
-            return mocked_object
-        __salt__['reg.read_value'] = read_value
-
-        win_reg.__salt__ = __salt__
-        result = win_reg._is_domain_controller()
-        self.assertFalse(result)
-
     def test_validate_params_positive(self):
         """
         test validate params for positive result
@@ -240,7 +205,6 @@ class TestWinRegWithMocks(TestCase):
                             }
                      }
 
-        win_reg._is_domain_controller = mock.Mock(return_value=True)
         win_reg._reg_path_splitter = mock.Mock(return_value=reg_dict)
         win_reg._find_option_value_in_reg = mock.Mock(return_value='0')
         result = win_reg.execute(block_id, block_dict)
@@ -267,7 +231,6 @@ class TestWinRegWithMocks(TestCase):
                             }
                      }
 
-        win_reg._is_domain_controller = mock.Mock(return_value=True)
         win_reg._reg_path_splitter = mock.Mock(return_value=reg_dict)
         win_reg._find_option_value_in_reg = mock.Mock(return_value=False)
         result = win_reg.execute(block_id, block_dict)
