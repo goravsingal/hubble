@@ -98,18 +98,14 @@ def execute(block_id, block_dict, chain_args=None):
         tuple of result(value) and status(boolean)
     """
     log.debug('Executing win_reg module for id: {0}'.format(block_id))
-    __is_domain_controller__ = _is_domain_controller()
-    run_on_dc = block_dict.get('run_on_dc', True)
-    run_on_member_server = block_dict.get('run_on_member_server', True)
-    if __is_domain_controller__ and not run_on_dc:
-        return
-    if not __is_domain_controller__ and not run_on_member_server:
-        return
+
     reg_name = block_dict.get("args").get("name")
     reg_dict = _reg_path_splitter(reg_name)
     secret = _find_option_value_in_reg(reg_dict.get('hive'), reg_dict.get('key'), reg_dict.get('value'))
+    if isinstance(secret, dict):
+        return runner_utils.prepare_negative_result_for_module(block_id,
+                                                               "registry output is a dict, currently unsupported")
     result = {reg_name: secret}
-
     log.debug("win_reg module output for block_id %s, is %s", block_id, result)
 
     if secret is False:
@@ -209,15 +205,5 @@ def _read_reg_value(reg_hive, reg_key, reg_value):
             return False
         else:
             return reg_result.get('vdata')
-    else:
-        return False
-
-
-def _is_domain_controller():
-    ret = __salt__['reg.read_value'](hive="HKLM",
-                                     key=r"SYSTEM\CurrentControlSet\Control\ProductOptions",
-                                     vname="ProductType")
-    if ret.get('vdata') == "LanmanNT":
-        return True
     else:
         return False
