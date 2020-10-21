@@ -21,12 +21,12 @@ ssl_cert_check:
           comparator:
             type: certificate
             compare:
-                not_before: 30 # maximum number of days until the certificate becomes valid (default value: 0)
+                not_before: 30 # maximum number of days until the certificate becomes valid (Optional)
                                # the check is failed if the certificate becomes valid in more than 30 days
-                not_after: 45  # minimum number of days until certificate expires (default value: 0)
+                not_after: 45  # minimum number of days until certificate expires (Optional)
                                # the check is failed if the certificate expires in less than 45 days
-                fail_if_not_before: True # fails the check if the certificate is not valid yet ( default value: False)
-                               # if True, the check will fail only if not_before is 0 (or missing): if the certificate is not valid yet, but it is expected to be
+                fail_if_not_before: True # fails the check if the certificate is not valid yet (Optional)
+                               # if True, the check will fail only if not_before is 0: if the certificate is not valid yet, but it is expected to be
 
 FDG Example:
 ------------
@@ -184,8 +184,11 @@ def execute(block_id, block_dict, extra_args=None):
     if not cert:
         return runner_utils.prepare_negative_result_for_module(block_id, 'unable_to_load_certificate')
 
-    log.info("FDG ssl_certificate - cert found, parsing certificate")
+    log.debug("ssl_certificate - cert found, parsing certificate")
     cert_details = _parse_cert(cert, host_ip, host_port, path)
+    if 'error' in cert_details:
+        log.debug('Error in parsing certificate. {0}'.format(cert_details['error']))
+        return runner_utils.prepare_negative_result_for_module(block_id, 'unable_to_parse_certificate')
     stop_time = time.time()
     cert_details['execution_time'] = stop_time - start_time
     return runner_utils.prepare_positive_result_for_module(block_id, cert_details)
@@ -237,8 +240,6 @@ def _get_cert_from_endpoint(server, port=443, ssl_timeout=3):
     except Exception as e:
         log.error('Unable to retrieve certificate from {0}. Error: {1}'.format(server, e))
         cert_details = None
-    if not cert_details:
-        return None
     return cert_details
 
 
@@ -249,7 +250,7 @@ def _get_cert_from_file(cert_file_path):
             cert_details = cert_file.read()
     except IOError as e:
         log.error('File not found: {0}. Error: {1}'.format(cert_file_path, e))
-        return None
+        cert_details = None
     return cert_details
 
 
@@ -310,6 +311,6 @@ def _get_certificate_san(x509cert):
             trimmed_san = san.lstrip()
             trimmed_san_list.append(trimmed_san)
     except Exception as e:
-        message = "FDG ssl_certificate couldn't fetch SANs: {0}".format(e)
+        message = "ssl_certificate couldn't fetch SANs: {0}".format(e)
         log.error(message)
     return trimmed_san_list
