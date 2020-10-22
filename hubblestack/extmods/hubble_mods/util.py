@@ -9,37 +9,154 @@ the data outputted by a module to serve it to another module.
 All functions in this module are meant to be used in chaining.
 
 Functions supported:
+--------------------
 - filter_dict
     Given a target dictionary, filter it and return the result.
+    
+    Arguments supported:
+        starting_dict:  (Optional) Starting dictionary
+        update_chained: (Default True)
+                            If True, ``chained value`` will have ``.update()`` called on it
+                            with ``starting_dict`` as the argument.
+                            Set ``update_chained`` to False to ignore ``starting_dict``.
+        filter_values:  (Default False)
+                            By default, the filtering will be done on keys.
+                            Set ``filter_values`` to True to filter by values.
+        filter_rules:   (Mandatory) is a dictionary mapping comparison types to values 
+                            to compare against.
+                            It can take the following values:
+                                ge = greater or equal, gt = greater than, 
+                                lt = lower than, le = lower or equal
+                                ne = not equal, eq = equal
+
 - filter_seq
     Given a target sequence, filter it and return the result.
+
+    Arguments supported:
+        starting_seq:  (Optional) Starting sequence
+        extend_chained:(Optional) (Default True) 
+                        If True, update starting_seq with chained value
+        filter_rules:  (Mandatory) is a dictionary mapping comparison types to values 
+                       to compare against.
+                       It can take the following values:
+                        ge = greater or equal, gt = greater than, 
+                        lt = lower than, le = lower or equal
+                        ne = not equal, eq = equal
+
 - get_index
-    Given a list list, return the item found at ``index``.
+    Given a list, return the item found at ``index``.
+
+    Arguments supported:
+        index:          (Mandatory)
+                        Index value for which value is needed
+        starting_list:  (Optional)
+                        Starting list param
+        extend_chained: (Default True)
+                        By default, ``chained`` will have ``.extend()`` called on it with
+                        ``starting_list`` as the only argument.
+
 - get_key
     Given a dictionary, return an element by ``key``.
+
+    Arguments supported:
+        key:           (Mandatory)
+                        Key value to get
+        starting_dict: (Optional)
+                        Starting dictionary param
+        extend_chained: (Default True)
+                        By default, ``chained`` will have ``.update()`` called on it with
+                        ``starting_dict`` as the only argument. Set ``extend_chained`` to False
+                        to ignore ``starting_dict``.
+
 - join
     Given a list of strings, join them into a string, using ``sep`` as delimiter.
+
+    Arguments supported:
+        words:          (Mandatory)
+                        List of string
+        sep:            (Optional)
+                        Separator, Default: ''
+        extend_chained: (Default True)
+                        By default, ``chained`` will have ``.extend()`` called on it with
+                        ``words`` as the only argument.
+
 - dict_to_list
     Given a target dictionary, convert it to a list of (key, value) tuples.
+
+    Arguments supported:
+        starting_dict:  (Optional)
+                        Initial dictionary
+        update_chained: (Default True)
+                        By default, ``chained`` will have ``.update()`` called on it with
+                        ``starting_dict`` as the only argument.
+                        Set ``update_chained`` to False to ignore ``starting_dict``.
+
 - dict_convert_none
     Given a target sequence, look for dictionary keys that have empty string values
     and replace them with None.
+
+    Arguments supported:
+        starting_dict:  (Optional)
+                        Initial dictionary
+        extend_chained: (Default True)
+                        By default, ``chained`` will have ``.extend()`` or  ``.update()``  called on it with
+                        ``starting_seq`` as the only argument.
+                        Set ``extend_chained`` to False to ignore ``starting_seq``.
+
 - print_string
     Given a string, return it.
+
+    Arguments supported:
+        starting_string:  (Optional)
+                        Initial string
+        format_chained: (Default True)
+                        By default, ``starting_string`` will have ``.format()`` called on it
+                        with ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
+                        substitute the chained value.) If you want to avoid having to escape curly braces,
+                        set ``format_chained=False``.
+
 - dict_remove_none
     Given a target sequence, look for dictionary keys that have values 
     of None and remove them.
+
+    Arguments supported:
+        starting_seq:  (Optional)
+                        Initial sequence
+        extend_chained: (Default True)
+                        By default, ``chained`` will have ``.extend()`` or ``.update()`` called on it with
+                        ``starting_seq`` as the only argument.
+                        Set ``extend_chained`` to False to ignore ``starting_seq``.
+
 - nop
     This function just returns the chained value. It is a nop/no operation.
+
+    No Argument supported (Only chaining param)
+
 - encode_base64
     Given a string, base64 encode it and return it.
 
+    Arguments supported:
+        starting_string:(Optional)
+                        Initial string
+        format_chained: (Default True)
+                        By default, ``starting_string`` will have ``.format()`` called on it
+                        with ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
+                        substitute the chained value.) If you want to avoid having to escape curly braces,
+                        set ``format_chained=False``.
+
+------------------------------------------------
 FDG Profile Example for one utility method:
 
 main:
+    module: stat
+    args:
+        path: /abc
+    pipe: check
+
+check:
   module: util
     args:
-        starting_seq: [3, 4]
+        function: filter_dict
         filter_rules:
             gt: 1
             ne: 3
@@ -55,6 +172,7 @@ import re
 from salt.exceptions import ArgumentValueError
 from hubblestack.utils.encoding import encode_base64 as utils_encode_base64
 
+from hubblestack.extmods.module_runner.runner import Caller
 import hubblestack.extmods.module_runner.runner_utils as runner_utils
 from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
@@ -75,12 +193,17 @@ def validate_params(block_id, block_dict, extra_args=None):
                   'caller': 'Audit'}
 
     Raises:
-        AuditCheckValidationError: For any validation error
+        HubbleCheckValidationError: For any validation error
     """
-    log.debug('Module: service Start validating params for check-id: {0}'.format(block_id))
+    log.debug('Module: util Start validating params for check-id: {0}'.format(block_id))
 
     # fetch required param
     error = {}
+    
+    # This module is callable from FDG only
+    if extra_args.get('caller') == Caller.AUDIT:
+        error['util'] = 'Module: util called from AUDIT !!!!'
+
     function_param = runner_utils.get_param_for_module(block_id, block_dict, 'function')
     if not function_param:
         error['function'] = 'Mandatory parameter: function not found for id: %s' % (block_id)
@@ -125,7 +248,7 @@ def execute(block_id, block_dict, extra_args=None):
     returns:
         tuple of result(value) and status(boolean)
     """
-    log.debug('Executing stat module for id: {0}'.format(block_id))
+    log.debug('Executing util module for id: {0}'.format(block_id))
     
     function_param = runner_utils.get_param_for_module(block_id, block_dict, 'function')
     if function_param == 'filter_dict':
@@ -975,3 +1098,25 @@ def _encode_base64(block_id, block_dict, extra_args):
     if not status:
         return runner_utils.prepare_negative_result_for_module(block_id, 'unknown_error')
     return runner_utils.prepare_positive_result_for_module(block_id, ret)
+
+def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
+    """
+    For getting params to log, in non-verbose logging
+
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "string/dict", 'status': True},
+                  'extra_args': [{'check_id': 'ADOBE-01',
+                                  'check_status': 'Success'}]
+                  'caller': 'FDG'}
+    """
+    log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
+
+    # fetch required param
+    function_param = runner_utils.get_param_for_module(block_id, block_dict, 'function')
+
+    return {'function': function_param}
