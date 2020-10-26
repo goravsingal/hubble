@@ -294,6 +294,7 @@ def match_any_if_key_matches(audit_id, result_to_compare, args):
         return False, "list::match_any_if_key_matches failure. Got={0}".format(result_to_compare)
     return True, "Check Passed"
 
+
 def filter_compare(audit_id, result_to_compare, args):
     """
     A two-step comparator.
@@ -311,7 +312,7 @@ def filter_compare(audit_id, result_to_compare, args):
     filtered_list = []
     for r_compare in result_to_compare:
         ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(
-            audit_id, 
+            audit_id,
             {"type": "dict", "match": filter_dict_args},
             r_compare)
         if ret_status:
