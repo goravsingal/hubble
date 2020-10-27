@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 """
-Hubble Nova plugin for running miscellaneous one-off python functions to
-run more complex nova audits without allowing arbitrary command execution
+Hubble Audit plugin for running miscellaneous one-off python functions to
+run more complex Audit audits without allowing arbitrary command execution
 from within the yaml profiles.
 
 Note: This module is only available through Audit
@@ -14,20 +14,12 @@ Functions supported:
     Ensure firewall rule for all open ports
 - check_password_fields_not_empty
     Ensure password fields are not empty
-- ungrouped_files_or_dir
-    Ensure no ungrouped files or directories exist
-- unowned_files_or_dir
-    Ensure no unowned files or directories exist
-- world_writable_file
-    Ensure no world writable files exist
 - system_account_non_login
     Ensure system accounts are non-login
     Params:
         non_login_shell - Default value '/sbin/nologin'
         max_system_uid - Default value '500'
         except_for_users - Default value ''
-- sticky_bit_on_world_writable_dirs
-    Ensure sticky bit is set on all world-writable directories
 - default_group_for_root
     Ensure default group for the root account is GID 0
 - root_is_only_uid_0_account
@@ -38,12 +30,6 @@ Functions supported:
     Automatically returns failure, no reason
 - test_failure_reason
     Automatically returns failure, with a reason
-- test_mount_attrs
-    Ensure that a given directory is mounted with appropriate attributes
-    Params:
-        mount_name (Mandatory)
-        attribute  (Mandatory)
-        check_type (Default 'hard')
 - check_path_integrity
     Ensure that system PATH variable is not malformed.
 - check_time_synchronization
@@ -70,10 +56,6 @@ Functions supported:
         state (Mandatory)
 - check_ssh_timeout_config
     Ensure SSH Idle Timeout Interval is configured
-- check_unowned_files
-    Ensure no unowned files or directories exist
-- check_ungrouped_files
-    Ensure no ungrouped files or directories exist
 - check_all_users_home_directory
     Ensure all users' home directories exist
 - check_users_home_directory_permissions
@@ -170,17 +152,12 @@ log = logging.getLogger(__name__)
 FUNCTION_MAP = {
     'check_all_ports_firewall_rules': _check_all_ports_firewall_rules,
     'check_password_fields_not_empty': _check_password_fields_not_empty,
-    'ungrouped_files_or_dir': _ungrouped_files_or_dir,
-    'unowned_files_or_dir': _unowned_files_or_dir,
-    'world_writable_file': _world_writable_file,
     'system_account_non_login': _system_account_non_login,
-    'sticky_bit_on_world_writable_dirs': _sticky_bit_on_world_writable_dirs,
     'default_group_for_root': _default_group_for_root,
     'root_is_only_uid_0_account': _root_is_only_uid_0_account,
     'test_success': _test_success,
     'test_failure': _test_failure,
     'test_failure_reason': _test_failure_reason,
-    'test_mount_attrs': _test_mount_attrs,
     'check_path_integrity': _check_path_integrity,
     'check_time_synchronization': _check_time_synchronization,
     'check_core_dumps': _check_core_dumps,
@@ -191,8 +168,6 @@ FUNCTION_MAP = {
     'check_duplicate_uids': _check_duplicate_uids,
     'check_service_status': _check_service_status,
     'check_ssh_timeout_config': _check_ssh_timeout_config,
-    'check_unowned_files': _check_unowned_files,
-    'check_ungrouped_files': _check_ungrouped_files,
     'check_all_users_home_directory': _check_all_users_home_directory,
     'check_users_home_directory_permissions': _check_users_home_directory_permissions,
     'check_users_own_their_home': _check_users_own_their_home,
@@ -223,10 +198,12 @@ def validate_params(block_id, block_dict, extra_args=None):
                   'caller': 'Audit'}
 
     Raises:
-        AuditCheckValidationError: For any validation error
+        HubbleCheckValidationError: For any validation error
     """
     log.debug('Module: misc Start validating params for check-id: {0}'.format(block_id))
     
+    error = {}
+
     # This module is callable from Audit only
     if extra_args.get('caller') == Caller.FDG:
         error['misc'] = 'Module: misc called from FDG !!!!'
@@ -234,15 +211,12 @@ def validate_params(block_id, block_dict, extra_args=None):
     # fetch required param
     function_name = runner_utils.get_param_for_module(block_id, block_dict, 'function')
 
-    error = {}
     if not function_name:
         error['function'] = 'function not provided for block_id: {0}'.format(block_id)
     elif function_name not in FUNCTION_MAP:
         error['function'] = 'Unsupported function name: {0} for block_id: {1}'.format(function_name, block_id)
     else:
-        if function_name == 'test_mount_attrs':
-            _validation_helper(block_id, block_dict, ['mount_name', 'attribute'], error)
-        elif function_name == 'check_directory_files_permission':
+        if function_name == 'check_directory_files_permission':
             _validation_helper(block_id, block_dict, ['path', 'permission'], error)
         elif function_name == 'check_service_status':
             _validation_helper(block_id, block_dict, ['service_name', 'state'], error)
@@ -325,32 +299,6 @@ def _check_password_fields_not_empty(block_id, block_dict, extra_args):
     result = _execute_shell_command('cat /etc/shadow | awk -F: \'($2 == "" ) { print $1 " does not have a password "}\'', python_shell=True)
     return True if result == '' else result
 
-def _ungrouped_files_or_dir(block_id, block_dict, extra_args):
-    """
-    Ensure no ungrouped files or directories exist
-    """
-    raise CommandExecutionError('Module disabled due to performance concerns')
-    result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -nogroup', python_shell=True)
-    return True if result == '' else result
-
-
-def _unowned_files_or_dir(block_id, block_dict, extra_args):
-    """
-    Ensure no unowned files or directories exist
-    """
-    raise CommandExecutionError('Module disabled due to performance concerns')
-    result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -nouser', python_shell=True)
-    return True if result == '' else result
-
-
-def _world_writable_file(block_id, block_dict, extra_args):
-    """
-    Ensure no world writable files exist
-    """
-    raise CommandExecutionError('Module disabled due to performance concerns')
-    result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type f -perm -0002', python_shell=True)
-    return True if result == '' else result
-
 def _system_account_non_login(block_id, block_dict, extra_args=None):
     """
     Ensure system accounts are non-login
@@ -371,15 +319,6 @@ def _system_account_non_login(block_id, block_dict, extra_args=None):
            result.append(line)
     return True if result == [] else str(result)
 
-def _sticky_bit_on_world_writable_dirs(block_id, block_dict, extra_args):
-    """
-    Ensure sticky bit is set on all world-writable directories
-    """
-    raise CommandExecutionError('Module disabled due to performance concerns')
-    result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null', python_shell=True)
-    return True if result == '' else "There are failures"
-
-
 def _default_group_for_root(block_id, block_dict, extra_args):
     """
     Ensure default group for the root account is GID 0
@@ -395,33 +334,6 @@ def _root_is_only_uid_0_account(block_id, block_dict, extra_args):
     """
     result = _execute_shell_command('cat /etc/passwd | awk -F: \'($3 == 0) { print $1 }\'', python_shell=True)
     return True if result.strip() == 'root' else result
-
-def _test_mount_attrs(block_id, block_dict, extra_args=None):
-    """
-    Ensure that a given directory is mounted with appropriate attributes
-    If check_type is soft, then in absence of volume, True will be returned
-    If check_type is hard, then in absence of volume, False will be returned
-    """
-    mount_name = runner_utils.get_param_for_module(block_id, block_dict, 'mount_name')
-    attribute = runner_utils.get_param_for_module(block_id, block_dict, 'attribute')
-    check_type = runner_utils.get_param_for_module(block_id, block_dict, 'check_type', 'hard')
-    
-    # check that the path exists on system
-    command = 'test -e ' + mount_name
-    results = __salt__['cmd.run_all'](command, ignore_retcode=True)
-    retcode = results['retcode']
-    if str(retcode) == '1':
-        return True if check_type == "soft" else (mount_name + " folder does not exist")
-
-    # if the path exits, proceed with following code
-    output = __salt__['cmd.run']('cat /proc/mounts')
-    if not re.search(mount_name, output, re.M):
-        return True if check_type == "soft" else (mount_name + " is not mounted")
-    else:
-        for line in output.splitlines():
-            if mount_name in line and attribute not in line:
-                return str(line)
-    return True
 
 def _check_time_synchronization(block_id, block_dict, extra_args):
     """
@@ -606,36 +518,6 @@ def _check_ssh_timeout_config(block_id, block_dict, extra_args):
             return "ClientAliveCountMax value should be less than equal to 3"
     else:
         return "ClientAliveInterval value should be less than equal to 300"
-
-def _check_unowned_files(block_id, block_dict, extra_args):
-    """
-    Ensure no unowned files or directories exist
-    """
-    raise CommandExecutionError('Module disabled due to performance concerns')
-    unowned_files = _execute_shell_command("df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -nouser 2>/dev/null", python_shell=True).strip()
-    unowned_files = unowned_files.split('\n') if unowned_files != "" else []
-    # The command above only searches local filesystems, there may still be compromised items on network
-    # mounted partitions.
-    # Following command will check each partition for unowned files
-    unowned_partition_files = _execute_shell_command("mount | awk '{print $3}' | xargs -I '{}' find '{}' -xdev -nouser 2>/dev/null", python_shell=True).strip()
-    unowned_partition_files = unowned_partition_files.split('\n') if unowned_partition_files != "" else []
-    unowned_files = unowned_files + unowned_partition_files
-    return True if unowned_files == [] else str(list(set(unowned_files)))
-
-def _check_ungrouped_files(block_id, block_dict, extra_args):
-    """
-    Ensure no ungrouped files or directories exist
-    """
-    raise CommandExecutionError('Module disabled due to performance concerns')
-    ungrouped_files = _execute_shell_command("df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -nogroup 2>/dev/null", python_shell=True).strip()
-    ungrouped_files = ungrouped_files.split('\n') if ungrouped_files != "" else []
-    # The command above only searches local filesystems, there may still be compromised items on network
-    # mounted partitions.
-    # Following command will check each partition for unowned files
-    ungrouped_partition_files = _execute_shell_command("mount | awk '{print $3}' | xargs -I '{}' find '{}' -xdev -nogroup 2>/dev/null", python_shell=True).strip()
-    ungrouped_partition_files = ungrouped_partition_files.split('\n') if ungrouped_partition_files != "" else []
-    ungrouped_files = ungrouped_files + ungrouped_partition_files
-    return True if ungrouped_files == [] else str(list(set(ungrouped_files)))
 
 def _check_all_users_home_directory(block_id, block_dict, extra_args=None):
     """
@@ -1087,10 +969,3 @@ def _execute_shell_command(cmd, python_shell=False):
     """
     return __salt__['cmd.run'](cmd, python_shell=python_shell, shell='/bin/bash', ignore_retcode=True)
 
-
-# NOTE
-# function restrict_permissions can be solved though stat module
-# check_if_any_pkg_installed can be solved using pkg module
-# check_sshd_parameters and check_sshd_paramters doing same thing
-
-42 functions...
