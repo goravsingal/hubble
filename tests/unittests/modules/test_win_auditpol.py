@@ -59,7 +59,7 @@ class TestWinAuditpol(TestCase):
     @patch('hubblestack.extmods.hubble_mods.win_auditpol._auditpol_import')
     def test_execute2(self, mockWinAuditpol):
         """
-        Positive case. Policy name exists in auditpol output
+        Positive case. Policy name does not exist in auditpol output
         """
 
         block_dict = {"args": {"name": "test11"}}
