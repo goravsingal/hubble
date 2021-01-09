@@ -111,7 +111,7 @@ RUN choco install osquery --version 3.4.0 -y;
 
 #All the variables used for hubble
 ARG HUBBLE_CHECKOUT=develop
-ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
+ARG HUBBLE_GIT_URL=https://github.com/goravsingal/hubble.git
 ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 #Clone Hubble
 RUN echo "debug 1"
