@@ -9,7 +9,7 @@ requests>=2.13.0
 daemon
 boto3
 botocore
-pygit2<0.27.0
+pygit2==0.27.2
 salt-ssh
 gitpython
 pyinotify

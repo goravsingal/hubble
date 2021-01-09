@@ -27,7 +27,7 @@ packaging
 patch==1.*
 psutil
 pycryptodome
-pygit2<0.27.0
+pygit2==0.27.2
 pyinotify
 pyinstaller
 pyinstaller-hooks

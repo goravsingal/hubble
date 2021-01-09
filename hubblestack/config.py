@@ -663,7 +663,7 @@ VALID_OPTS = {
 
     # TO REMOVE: see below # # The source location for the winrepo sls files
     # TO REMOVE: see below # # (used by win_pkg.py, minion only)
-    # TO REMOVE: see below # "winrepo_source_dir": str,
+    "winrepo_source_dir": str,
     # TO REMOVE: see below # "winrepo_dir": str,
     # TO REMOVE: see below # "winrepo_dir_ng": str,
     # TO REMOVE: see below # "winrepo_cachefile": str,
@@ -671,8 +671,8 @@ VALID_OPTS = {
     # TO REMOVE: see below # # loaded as a non-string type, which is OK because winrepo will normalize
     # TO REMOVE: see below # # them to strings. But rather than include all the possible types it could
     # TO REMOVE: see below # # be, we'll just skip type-checking.
-    # TO REMOVE: see below # "winrepo_cache_expire_max": int,
-    # TO REMOVE: see below # "winrepo_cache_expire_min": int,
+    "winrepo_cache_expire_max": int,
+    "winrepo_cache_expire_min": int,
     # TO REMOVE: see below # "winrepo_remotes": list,
     # TO REMOVE: see below # "winrepo_remotes_ng": list,
     # TO REMOVE: see below # "winrepo_ssl_verify": bool,
@@ -1052,10 +1052,10 @@ DEFAULT_OPTS = {
     # after the windows phase of the saltless re-work
     #   "winrepo_dir": os.path.join(hubblestack.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo"),
     #   "winrepo_dir_ng": os.path.join(hubblestack.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo-ng"),
-    #   "winrepo_source_dir": "salt://win/repo-ng/",
+    "winrepo_source_dir": "salt://win/repo-ng/",
     #   "winrepo_cachefile": "winrepo.p",
-    #   "winrepo_cache_expire_max": 21600,
-    #   "winrepo_cache_expire_min": 1800,
+    "winrepo_cache_expire_max": 21600,
+    "winrepo_cache_expire_min": 1800,
     #   "winrepo_remotes": ["https://github.com/saltstack/salt-winrepo.git"],
     #   "winrepo_remotes_ng": ["https://github.com/saltstack/salt-winrepo-ng.git"],
     #   "winrepo_branch": "master",
