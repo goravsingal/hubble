@@ -148,4 +148,4 @@ RUN $ProgressPreference = 'SilentlyContinue'; \
   Invoke-WebRequest -Uri 'http://repo.saltstack.com/windows/dependencies/64/vcredist_x64_2008_mfc.exe' -OutFile "C:/temp/hubble/pkg/windows/vcredist.exe"
 
 COPY entrypoint.ps1 C:/temp/
-# ENTRYPOINT ["powershell.exe", "C:/temp/entrypoint.ps1"]
+ENTRYPOINT ["powershell.exe", "C:/temp/entrypoint.ps1"]
