@@ -120,14 +120,6 @@ RUN git clone "$env:HUBBLE_GIT_URL"; \
   git checkout "$env:HUBBLE_CHECKOUT"; \
   pop-location;
 
-RUN echo "debug 2"
-# below 2 are temp steps as they are not checked-in yet
-ADD salt_build_script.ps1 C:/temp/hubble/pkg/windows
-ADD req_pip.txt C:/temp/hubble/pkg/windows
-ADD req_win.txt C:/temp/hubble/pkg/windows
-ADD req.txt C:/temp/hubble/pkg/windows
-ADD modules C:/temp/hubble/pkg/windows/modules
-
 RUN Push-Location C:/temp/hubble/pkg/windows; \
 		[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'; \
 		./salt_build_script.ps1 -Silent;
