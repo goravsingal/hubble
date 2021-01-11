@@ -666,7 +666,7 @@ VALID_OPTS = {
     "winrepo_source_dir": str,
     # TO REMOVE: see below # "winrepo_dir": str,
     # TO REMOVE: see below # "winrepo_dir_ng": str,
-    # TO REMOVE: see below # "winrepo_cachefile": str,
+    "winrepo_cachefile": str,
     # TO REMOVE: see below # # NOTE: winrepo_branch omitted here because its value could conceivably be
     # TO REMOVE: see below # # loaded as a non-string type, which is OK because winrepo will normalize
     # TO REMOVE: see below # # them to strings. But rather than include all the possible types it could
@@ -1053,7 +1053,7 @@ DEFAULT_OPTS = {
     #   "winrepo_dir": os.path.join(hubblestack.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo"),
     #   "winrepo_dir_ng": os.path.join(hubblestack.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo-ng"),
     "winrepo_source_dir": "salt://win/repo-ng/",
-    #   "winrepo_cachefile": "winrepo.p",
+    "winrepo_cachefile": "winrepo.p",
     "winrepo_cache_expire_max": 21600,
     "winrepo_cache_expire_min": 1800,
     #   "winrepo_remotes": ["https://github.com/saltstack/salt-winrepo.git"],
