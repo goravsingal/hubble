@@ -3,7 +3,7 @@
 ansi2html
 azure-storage-blob
 azure-storage-common
-azure
+azure==4.0.0
 backports-abc
 boto3
 botocore
