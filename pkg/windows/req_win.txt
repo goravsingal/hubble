@@ -1,2 +1,4 @@
 pywin32==223
 WMI==1.4.9
+pypiwin32==223
+psutil==5.6.1
