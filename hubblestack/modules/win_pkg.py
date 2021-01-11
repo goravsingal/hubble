@@ -61,6 +61,7 @@ import hubblestack.utils.platform
 import hubblestack.utils.win_functions
 import hubblestack.template
 import hubblestack.payload
+from urllib.parse import urlparse
 
 log = logging.getLogger(__name__)
 
