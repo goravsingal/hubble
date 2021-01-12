@@ -862,8 +862,7 @@ def _get_reg_software(include_components=True,
     kwargs = {'hive': 'HKLM',
               'key': 'Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall',
               'use_32bit': False}
-    for sub_key in __utils__['reg.list_keys'](hive=kwargs['hive'],
-                                              key=kwargs['key']):
+    for sub_key in __utils__['reg.list_keys'](**kwargs):
         kwargs['sub_key'] = sub_key
         if skip_component(**kwargs):
             continue
@@ -879,9 +878,8 @@ def _get_reg_software(include_components=True,
 
     # HKLM Uninstall 32 bit
     kwargs['use_32bit'] = True
-    for sub_key in __utils__['reg.list_keys'](hive=kwargs['hive'],
-                                              key=kwargs['key'],
-                                              use_32bit_registry=kwargs['use_32bit']):
+    kwargs.pop('sub_key', False)
+    for sub_key in __utils__['reg.list_keys'](**kwargs):
         kwargs['sub_key'] = sub_key
         if skip_component(**kwargs):
             continue
@@ -901,7 +899,7 @@ def _get_reg_software(include_components=True,
               'use_32bit': False}
     userdata_key = 'Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\' \
                    'UserData\\S-1-5-18\\Products'
-    for sub_key in __utils__['reg.list_keys'](hive=kwargs['hive'], key=kwargs['key']):
+    for sub_key in __utils__['reg.list_keys'](**kwargs):
         # If the key does not exist in userdata, skip it
         if not __utils__['reg.key_exists'](
                 hive=kwargs['hive'],
@@ -926,33 +924,35 @@ def _get_reg_software(include_components=True,
         kwargs = {'hive': hive_hku,
                   'key': uninstall_key.format(user_guid),
                   'use_32bit': False}
-        for sub_key in __utils__['reg.list_keys'](hive=kwargs['hive'],
-                                                  key=kwargs['key']):
-            kwargs['sub_key'] = sub_key
-            if skip_component(**kwargs):
-                continue
-            if skip_win_installer(**kwargs):
-                continue
-            if skip_uninstall_string(**kwargs):
-                continue
-            if skip_release_type(**kwargs):
-                continue
-            if skip_parent_key(**kwargs):
-                continue
-            add_software(**kwargs)
+        if __utils__['reg.key_exists'](**kwargs):
+            for sub_key in __utils__['reg.list_keys'](**kwargs):
+                kwargs['sub_key'] = sub_key
 
-        # While we have the user guid, we're gong to check userdata in HKLM
-        for sub_key in __utils__['reg.list_keys'](hive=hive_hku,
-                                                  key=product_key.format(user_guid)):
-            kwargs = {'hive': 'HKLM',
-                      'key': user_data_key.format(user_guid, sub_key),
-                      'sub_key': 'InstallProperties',
-                      'use_32bit': False}
-            if __utils__['reg.key_exists'](hive=kwargs['hive'],
-                                           key=kwargs['key']):
                 if skip_component(**kwargs):
                     continue
+                if skip_win_installer(**kwargs):
+                    continue
+                if skip_uninstall_string(**kwargs):
+                    continue
+                if skip_release_type(**kwargs):
+                    continue
+                if skip_parent_key(**kwargs):
+                    continue
                 add_software(**kwargs)
+        # While we have the user guid, we're gong to check userdata in HKLM
+        kwargs = {'hive': hive_hku,
+                'key': product_key.format(user_guid),
+                'use_32bit_registry': False}
+        if __utils__['reg.key_exists'](**kwargs):
+            for sub_key in __utils__['reg.list_keys'](**kwargs):
+                kwargs = {'hive': 'HKLM',
+                            'key': user_data_key.format(user_guid, sub_key),
+                            'use_32bit_registry': False}
+                if __utils__['reg.key_exists'](**kwargs):
+                    kwargs['sub_key'] = 'InstallProperties'
+                    if skip_component(**kwargs):
+                        continue
+                    add_software(**kwargs)
 
     # Uninstall for each user on the system (HKU), 32 bit
     for user_guid in __utils__['reg.list_keys'](hive=hive_hku,
@@ -960,36 +960,35 @@ def _get_reg_software(include_components=True,
         kwargs = {'hive': hive_hku,
                   'key': uninstall_key.format(user_guid),
                   'use_32bit': True}
-        for sub_key in __utils__['reg.list_keys'](hive=kwargs['hive'],
-                                                  key=kwargs['key'],
-                                                  use_32bit_registry=kwargs['use_32bit']):
-            kwargs['sub_key'] = sub_key
-            if skip_component(**kwargs):
-                continue
-            if skip_win_installer(**kwargs):
-                continue
-            if skip_uninstall_string(**kwargs):
-                continue
-            if skip_release_type(**kwargs):
-                continue
-            if skip_parent_key(**kwargs):
-                continue
-            add_software(**kwargs)
-
-        # While we have the user guid, we're gong to check userdata in HKLM
-        for sub_key_2 in __utils__['reg.list_keys'](hive=hive_hku,
-                                                    key=product_key.format(user_guid),
-                                                    use_32bit_registry=True):
-            kwargs = {'hive': 'HKLM',
-                      'key': user_data_key.format(user_guid, sub_key_2),
-                      'sub_key': 'InstallProperties',
-                      'use_32bit': True}
-            if __utils__['reg.key_exists'](hive=kwargs['hive'],
-                                           key=kwargs['key'],
-                                           use_32bit_registry=kwargs['use_32bit']):
+        if __utils__['reg.key_exists'](**kwargs):
+            for sub_key in __utils__['reg.list_keys'](**kwargs):
+                kwargs['sub_key'] = sub_key
                 if skip_component(**kwargs):
                     continue
+                if skip_win_installer(**kwargs):
+                    continue
+                if skip_uninstall_string(**kwargs):
+                    continue
+                if skip_release_type(**kwargs):
+                    continue
+                if skip_parent_key(**kwargs):
+                    continue
                 add_software(**kwargs)
+
+        kwargs = {'hive': hive_hku,
+                  'key': product_key.format(user_guid),
+                  'use_32bit_registry': True}
+        if __utils__['reg.key_exists'](**kwargs):
+            # While we have the user guid, we're going to check userdata in HKLM
+            for sub_key_2 in __utils__['reg.list_keys'](**kwargs):
+                kwargs = {'hive': 'HKLM',
+                          'key': user_data_key.format(user_guid, sub_key_2),
+                          'use_32bit_registry': True}
+                if __utils__['reg.key_exists'](**kwargs):
+                    kwargs['sub_key'] = 'InstallProperties'
+                    if skip_component(**kwargs):
+                        continue
+                    add_software(**kwargs)
 
     return reg_software
 
