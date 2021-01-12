@@ -2,7 +2,6 @@
 
 ansi2html
 azure-common
-azure-storage
 azure-storage-blob
 azure-storage-common
 backports-abc

@@ -15,7 +15,6 @@ gitpython
 pyinotify
 cffi
 azure-common
-azure-storage
 azure-storage-common
 azure-storage-blob
 croniter
