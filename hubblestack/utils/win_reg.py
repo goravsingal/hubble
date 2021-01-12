@@ -786,7 +786,7 @@ def cast_vdata(vdata=None, vtype='REG_SZ'):
         return [_to_unicode(i) for i in vdata]
     # Make sure REG_QWORD is a 64 bit integer
     elif vtype_value == win32con.REG_QWORD:
-        return (int)vdata
+        return int(vdata)
     # Everything else is int
     else:
         return int(vdata)

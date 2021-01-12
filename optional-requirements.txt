@@ -1,3 +1,5 @@
+azure-common
+azure-storage
 azure-storage-common
 azure-storage-blob
 boto3
