@@ -61,6 +61,7 @@ from hubblestack.utils.signing import find_wrapf
 
 try:
     import azure.storage.common
+    import azure.storage.blob
     HAS_AZURE = True
 except ImportError:
     HAS_AZURE = False
