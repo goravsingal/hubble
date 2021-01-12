@@ -15,7 +15,6 @@ gitpython
 pyinotify
 cffi
 azure-storage-common
-azure-storage-blob
 croniter
 vulners
 ntplib
