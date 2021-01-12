@@ -14,7 +14,7 @@ salt-ssh
 gitpython
 pyinotify
 cffi
-azure-common
+azure>=4.0.0
 azure-storage-common
 azure-storage-blob
 croniter

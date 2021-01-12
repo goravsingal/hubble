@@ -1,4 +1,4 @@
-azure-common
+azure>=4.0.0
 azure-storage-common
 azure-storage-blob
 boto3
