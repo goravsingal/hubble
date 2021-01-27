@@ -141,23 +141,6 @@ If (Test-Path "$($ini[$bitPaths]['VCppBuildToolsDir'])\vcbuildtools.bat") {
     $p    = Start-Process $file -ArgumentList '/Quiet' -Wait -NoNewWindow -PassThru
 }
 
-# #------------------------------------------------------------------------------
-# # Install Python
-# #------------------------------------------------------------------------------
-# Write-Output " - Checking for Python 3.5 installation . . ."
-# If (Test-Path "$($ini['Settings']['Python3Dir'])\python.exe") {
-#     # Found Python 3.5, do nothing
-#     Write-Output " - Python 3.5 Found . . ."
-# } Else {
-#     Write-Output " - Downloading $($ini[$bitPrograms]['Python3']) . . ."
-#     $file = "$($ini[$bitPrograms]['Python3'])"
-#     $url  = "$($ini['Settings']['SaltRepo'])/$bitFolder/$file"
-#     $file = "$($ini['Settings']['DownloadDir'])\$bitFolder\$file"
-#     DownloadFileWithProgress $url $file
-
-#     Write-Output " - $script_name :: Installing $($ini[$bitPrograms]['Python3']) . . ."
-#     $p    = Start-Process $file -ArgumentList "/Quiet InstallAllUsers=1 TargetDir=`"$($ini['Settings']['Python3Dir'])`" Include_doc=0 Include_tcltk=0 Include_test=0 Include_launcher=1 PrependPath=1 Shortcuts=0" -Wait -NoNewWindow -PassThru
-# }
 
 #------------------------------------------------------------------------------
 # Update Environment Variables
@@ -170,26 +153,6 @@ If (!($Path.ToLower().Contains("$($ini['Settings']['Scripts3Dir'])".ToLower())))
     $env:Path = $newPath
 }
 
-#==============================================================================
-# Update PIP and SetupTools
-#    caching depends on environment variable SALT_PIP_LOCAL_CACHE
-#==============================================================================
-# Write-Output " ----------------------------------------------------------------"
-# Write-Output " - $script_name :: Updating PIP and SetupTools . . ."
-# Write-Output " ----------------------------------------------------------------"
-# if ( ! [bool]$Env:SALT_PIP_LOCAL_CACHE) {
-#     Start_Process_and_test_exitcode "cmd" "/c $($ini['Settings']['Python3Dir'])\python.exe -m pip --disable-pip-version-check --no-cache-dir install -r $($script_path)\req_pip.txt" "python pip"
-# } else {
-#     $p = New-Item $Env:SALT_PIP_LOCAL_CACHE -ItemType Directory -Force # Ensure directory exists
-#     if ( (Get-ChildItem $Env:SALT_PIP_LOCAL_CACHE | Measure-Object).Count -eq 0 ) {
-#         # folder empty
-#         Write-Output "    pip download from req_pip.txt into empty local cache SALT_REQ_PIP $Env:SALT_PIP_LOCAL_CACHE"
-#         Start_Process_and_test_exitcode "cmd" "/c $($ini['Settings']['Python3Dir'])\python.exe -m pip --disable-pip-version-check download --dest $Env:SALT_PIP_LOCAL_CACHE -r $($script_path)\req_pip.txt" "pip download"
-#     }
-#     Write-Output "    reading from local pip cache $Env:SALT_PIP_LOCAL_CACHE"
-#     Write-Output "    If a (new) resource is missing, please delete all files in this cache, go online and repeat"
-#   Start_Process_and_test_exitcode "cmd" "/c $($ini['Settings']['Python3Dir'])\python.exe -m pip --disable-pip-version-check install --no-index --find-links=$Env:SALT_PIP_LOCAL_CACHE -r $($script_path)\req_pip.txt" "pip install"
-# }
 
 #==============================================================================
 # Install windows specific pypi resources using pip
@@ -262,16 +225,6 @@ Remove-Item "$($ini['Settings']['SitePkgs3Dir'])\pythonwin" -Force -Recurse
 Write-Output " - $script_name :: Removing PyWin32 scripts . . ."
 Remove-Item "$($ini['Settings']['Scripts3Dir'])\pywin32_*" -Force -Recurse
 
-#==============================================================================
-# Fix PyCrypto
-#==============================================================================
-# If ($NoPipDependencies -eq $false) {
-#   Write-Output " ----------------------------------------------------------------"
-#   Write-Output "   - $script_name :: Fixing PyCrypto . . ."
-#   Write-Output " ----------------------------------------------------------------"
-#   $nt_file = "$($ini['Settings']['Python3Dir'])\Lib\site-packages\Crypto\Random\OSRNG\nt.py"
-#   (Get-Content $nt_file) | Foreach-Object {$_ -replace '^import winrandom$', 'from Crypto.Random.OSRNG import winrandom'} | Set-Content $nt_file
-# }
 
 #==============================================================================
 # Copy DLLs to Python Directory
