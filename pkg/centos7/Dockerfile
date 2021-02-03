@@ -114,20 +114,20 @@ RUN eval "$(pyenv init -)" \
  && pip -v install --upgrade pip
 
 #extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
-ARG OSQUERY_TAR_FILENAME=osquery_4hubble.tar
-ADD ${OSQUERY_TAR_FILENAME} /opt/osquery/
-RUN /opt/osquery/osqueryi --version
+# ARG OSQUERY_TAR_FILENAME=osquery_4hubble.tar
+# ADD ${OSQUERY_TAR_FILENAME} /opt/osquery/
+# RUN /opt/osquery/osqueryi --version
 
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=v4.0.0
+ARG HUBBLE_CHECKOUT=dev2
 ARG HUBBLE_VERSION=4.5.0
 ENV HUBBLE_ITERATION=1
-ENV HUBBLE_URL=https://github.com/hubblestack/hubble
+ENV HUBBLE_URL=https://github.com/goravsingal/hubble
 ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
 ENV HUBBLE_SUMMARY="Profile based on-demand auditing and monitoring tool"
-ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
+ARG HUBBLE_GIT_URL=https://github.com/goravsingal/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
