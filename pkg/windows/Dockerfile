@@ -54,7 +54,30 @@ RUN $url = ('https://www.python.org/ftp/python/{0}/python-{1}-amd64.exe' -f $env
 	\
 	Write-Host 'Complete.'
 
-RUN pip --version;
+# https://github.com/pypa/get-pip
+ENV PYTHON_GET_PIP_URL https://github.com/pypa/get-pip/raw/d59197a3c169cef378a22428a3fa99d33e080a5d/get-pip.py
+ENV PYTHON_GET_PIP_SHA256 421ac1d44c0cf9730a088e337867d974b91bdce4ea2636099275071878cc189e
+
+RUN Write-Host ('Downloading get-pip.py ({0}) ...' -f $env:PYTHON_GET_PIP_URL); \
+	[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
+	Invoke-WebRequest -Uri $env:PYTHON_GET_PIP_URL -OutFile 'get-pip.py'; \
+	Write-Host ('Verifying sha256 ({0}) ...' -f $env:PYTHON_GET_PIP_SHA256); \
+	if ((Get-FileHash 'get-pip.py' -Algorithm sha256).Hash -ne $env:PYTHON_GET_PIP_SHA256) { \
+		Write-Host 'FAILED!'; \
+		exit 1; \
+	}; \
+	\
+	Write-Host ('Installing pip ...'); \
+	python get-pip.py \
+		--disable-pip-version-check \
+		--no-cache-dir \
+	; \
+	Remove-Item get-pip.py -Force; \
+	\
+	Write-Host 'Verifying pip install ...'; \
+	pip --version; \
+	\
+	Write-Host 'Complete.'
 
 ##install Chocolatey, then git and osquery
 ENV CHOCO_URL=https://chocolatey.org/install.ps1
